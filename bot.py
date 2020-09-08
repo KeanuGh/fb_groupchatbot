@@ -18,22 +18,41 @@ quick_replies = {
 react_replies = {
     "good bot": MessageReaction.HEART,
     "bad bot": MessageReaction.SAD,
+    "kill yourself bot": MessageReaction.ANGRY,
+    "shut up bot": MessageReaction.YES,
+    "bot shut up": MessageReaction.YES,
 }
 
 
 class BarelyKnowHerBot(Client):
+    def __init__(self, email, password):
+
+        # ---------STATES-----------
+        self.SHUT_UP = False
+        # --------/STATES-----------
+
+        super().__init__(email, password)
+
     def onMessage(self, author_id, message_object, thread_id, thread_type, **kwargs):
         # just look at text messages
         if message_object.text is not None:
             message = message_object.text
             message_stripped = clean_message(message)
 
-            funny_word = good_word(message_stripped)
+            funny_quip = hardly_know_em(message_stripped)
 
-            # simple reply-responses
-            if message_stripped in quick_replies:
-                self.send(Message(text=quick_replies[message_stripped], reply_to_id=message_object.uid),
-                          thread_id=thread_id, thread_type=thread_type)
+            # speak and don't speak
+            if message_stripped in ('bot shut up', 'shut up bot'):
+                self.SHUT_UP = True
+            elif 'bot speak' == message_stripped:
+                if self.SHUT_UP:
+                    self.reactToMessage(message_id=message_object.uid, reaction=MessageReaction.YES)
+                    self.SHUT_UP = False
+
+            # =================================
+            # ---------- REACTIONS ------------
+
+            # simple reply-reactions
             if message_stripped in react_replies:
                 self.reactToMessage(message_id=message_object.uid, reaction=react_replies[message_stripped])
 
@@ -41,16 +60,32 @@ class BarelyKnowHerBot(Client):
             elif 'i hardly know her' in message_stripped and author_id != self.uid:
                 self.reactToMessage(message_id=message_object.uid, reaction=MessageReaction.SMILE)
 
-            # absolutely hilarious joke
-            # reply if not replying to self, and passing a roll
-            elif funny_word \
-                    and author_id != self.uid \
-                    and random.random() < .2:
-                log.info(f"The message: \n{message}\n contains a hilarious word. Will reply now!")
+            # -------- /REACTIONS -------------
+            # =================================
 
-                funny_quip = f'{funny_word}? I hardly know her!'
-                self.send(Message(text=funny_quip, reply_to_id=message_object.uid), thread_id=thread_id,
-                          thread_type=thread_type)
+            # =================================
+            # ---------- REPLIES --------------
+
+            # - dont reply if bot is silenced -
+            if not self.SHUT_UP:
+
+                # simple reply-responses
+                if message_stripped in quick_replies:
+                    self.send(Message(text=quick_replies[message_stripped], reply_to_id=message_object.uid),
+                              thread_id=thread_id, thread_type=thread_type)
+
+                # absolutely hilarious joke
+                # reply if not replying to self, and passing a roll
+                elif funny_quip \
+                        and author_id != self.uid \
+                        and random.random() < .2:
+                    log.info(f"The message: \n{message}\n contains a hilarious word. Will reply now!")
+
+                    self.send(Message(text=funny_quip, reply_to_id=message_object.uid), thread_id=thread_id,
+                              thread_type=thread_type)
+
+            # ---------- /REPLIES -------------
+            # =================================
 
             else:
                 # special surprise
