@@ -1,14 +1,22 @@
 import re
 from nltk.tokenize import word_tokenize
 import pyphen
+
 dic = pyphen.Pyphen(lang='en_GB')
 
 
-# only use words with more than syllables or it makes no sense
-# "Car? I hardly know her!"
-# not so funny is it?
-def more_than_one_syllable(word):
-    return len(dic.inserted(word).split('-')) > 1
+def n_syllables(word: str) -> int:
+    """
+    returns the number of syllables in word (according to pyphen)
+    """
+    return len(dic.inserted(word).split('-'))
+
+
+def clean_message(text: str) -> str:
+    """
+    return lowercase string stripped of trailing whitespaces and nonalphanumeric characters
+    """
+    return re.sub(r'[^\sa-zA-Z0-9]', '', text).lower().strip()
 
 
 def hardly_know_em(text: str):
@@ -16,29 +24,98 @@ def hardly_know_em(text: str):
     if message contains a funny word, return that word (the last word if multiple) if it has more than one syllable.
     Otherwise return None
     """
-
     words = [word.lower() for word in word_tokenize(text)]
     for word in reversed(words):
+        word = word.lower().capitalize()
+
         if len(word) > 25:
             continue
         # I hardly know her!
         if word[-1:] == 'a' \
                 or word[-2:] in ('er', 'or', 'ar', 're') \
                 or word[-3:] == 'eur':
-            if more_than_one_syllable(word):
-                return f"{word.lower()}? I barely know her!"
+            if n_syllables(word) > 1:
+                return f"{word}? I hardly know her!"
 
         # I hardly know him!
-        if word[-2:] in ('im', 'em', 'um'):
-            if more_than_one_syllable(word):
-                return f"{word.lower()}? I barely know him!"
+        elif word[-2:] == 'im':
+            if n_syllables(word) > 1:
+                return f"{word}? I hardly know him!"
 
-    # return None if message isn't jokeable
-    return None
+        # I hardly know 'em!
+        elif word[-2:] in ('um', 'em'):
+            if n_syllables(word) > 1:
+                return f"{word}? I hardly know 'em!"
+
+        # return None if message isn't joke-able
+        else:
+            return None
 
 
-def clean_message(text: str):
+def haiku_detection(text: str, haiku_form: tuple = (5, 7, 5)):
     """
-    return lowercase string stripped of trailing whitespaces and nonalphanumeric characters
+    looks for haikus in text
+    :param text: input text
+    :param haiku_form: tuple of number of syllables in each line
+    :return: None if non-haiku-able
     """
-    return re.sub(r'[^\sa-zA-Z0-9]', '', text).lower().strip()
+    # text = "Whitecaps on the bay A broken signboard banging In the April wind".split()
+
+    words = [word.lower() for word in word_tokenize(text)]
+
+    # make word:syllables dictionary
+    syllables = {}
+    for word in words:
+        syllables[word] = n_syllables(word)
+
+    tot_syllables = sum(syllables.values())
+
+    # if not haiku-able
+    if tot_syllables != 17:
+        # print(f"There are {tot_syllables} syllables : {syllables}")
+        return None
+
+    # if haiku-able
+    else:
+        lines = [[] for _ in range(len(haiku_form))]
+        count, line = 0, 0
+        # check if words can be put into lines
+        for word in words:
+            count += syllables[word]
+            if count > haiku_form[line]:
+                # can't format as haiku
+                # print(f"Not possible to split word at syllable boundary: {word}, {syllables}")
+                return None
+            lines[line].append(word)
+            if count == haiku_form[line]:
+                line += 1
+                count = 0
+
+    # validate the haiku
+    for i, line in enumerate(haiku_form):
+        sum_line = sum(syllables[word] for word in lines[i])
+        if sum_line > line:
+            raise SyntaxError("Too many syllables in line {}. Got {}, want {}".format(i, sum_line, line))
+        elif sum_line < line:
+            raise SyntaxError("Not enough syllables in line {}. Got {}, want {}".format(i, sum_line, line))
+
+    return "\n".join(" ".join(line) for line in lines)
+
+
+def boy_and_lavagirl(text: str):
+    """
+    Looks for the word before 'boy' in text and returns "____ boy and lava girl"
+    returns None if 'boy' not in text.
+    Takes last instance if many instances
+
+    eg: boy_and_lavagirl("Spotted a fit boy in the chippy")
+       > 'fit boy and lava girl'
+    """
+    boy_adj = re.findall(r'([A-Za-z]+)\sboy', text)
+
+    if len(boy_adj) > 0:
+        output = boy_adj[-1] + " boy and lava girl"
+    else:
+        output = None
+
+    return output
