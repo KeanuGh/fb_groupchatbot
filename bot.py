@@ -78,9 +78,7 @@ class BarelyKnowHerBot(Client):
 
             # - dont reply if bot is silenced -
             if not self.SHUT_UP:
-
                 # check if bot can make a rip-roaringly hilarious joke
-                funny_quip = hardly_know_em(message_stripped)
 
                 # simple reply-responses
                 if message_stripped in quick_replies:
@@ -89,23 +87,22 @@ class BarelyKnowHerBot(Client):
 
                 # absolutely hilarious joke
                 # reply if not replying to self, and passing a roll
-                elif funny_quip \
-                        and random.random() < .2:
-                    log.info(f"The message: \n{message}\n contains a hilarious word. Will reply now!")
+                elif random.random() < .2 \
+                        and (funny_quip := hardly_know_em(message_stripped)):
+                    log.info(f'The message: "\n{message}\n" contains a hilarious word. Will reply now!')
 
                     self.send(Message(text=funny_quip, reply_to_id=message_object.uid),
                               thread_id=thread_id, thread_type=thread_type)
 
-                # haiku detection
-                haiku = haiku_detection(message_stripped)
-                if haiku:
+                # haiku detection (only if more than 3 words)
+                elif len(message_stripped.split()) < 4 \
+                        and (haiku := haiku_detection(message_stripped)):
                     self.send(Message(text=haiku, reply_to_id=message_object.uid),
                               thread_id=thread_id, thread_type=thread_type)
 
                 # ___ boy and lava girl
                 elif 'boy' in message_stripped:
-                    reply = boy_and_lavagirl(message_stripped)
-                    if reply:
+                    if reply := boy_and_lavagirl(message_stripped):
                         self.send(Message(text=reply, reply_to_id=message_object.uid),
                                   thread_id=thread_id, thread_type=thread_type)
 

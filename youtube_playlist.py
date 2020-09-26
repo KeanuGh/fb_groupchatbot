@@ -8,7 +8,6 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 from oauth2client.tools import argparser, run
 
-
 # The CLIENT_SECRETS_FILE variable specifies the name of a file that contains
 # the OAuth 2.0 information for this application, including its client_id and
 # client_secret. You can acquire an OAuth 2.0 client ID and client secret from
@@ -38,7 +37,7 @@ https://cloud.google.com/console
 For more information about the client_secrets.json file format, please visit:
 https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
 """ % os.path.abspath(os.path.join(os.path.dirname(__file__),
-                           CLIENT_SECRETS_FILE))
+                                   CLIENT_SECRETS_FILE))
 
 # This OAuth 2.0 access scope allows for full read/write access to the
 # authenticated user's account.
@@ -49,7 +48,7 @@ YOUTUBE_API_VERSION = "v3"
 
 def get_authenticated_service():
     flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE, scope=YOUTUBE_SCOPE,
-    message=MISSING_CLIENT_SECRETS_MESSAGE)
+                                   message=MISSING_CLIENT_SECRETS_MESSAGE)
 
     storage = Storage("%s-oauth2.json" % sys.argv[0])
     credentials = storage.get()
@@ -58,24 +57,25 @@ def get_authenticated_service():
         credentials = run(flow, storage)
 
     return build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
-        http=credentials.authorize(httplib2.Http()))
+                 http=credentials.authorize(httplib2.Http()))
 
 
-def add_video_to_playlist(youtube,videoID,playlistID):
-  add_video_request=youtube.playlistItem().insert(
-  part="snippet",
-  body={
-        'snippet': {
-          'playlistId': playlistID,
-          'resourceId': {
-                  'kind': 'youtube#video',
-              'videoId': videoID
+def add_video_to_playlist(youtube, videoID, playlistID):
+    add_video_request = youtube.playlistItem().insert(
+        part="snippet",
+        body={
+            'snippet': {
+                'playlistId': playlistID,
+                'resourceId': {
+                    'kind': 'youtube#video',
+                    'videoId': videoID
+                }
+                # 'position': 0
             }
-        #'position': 0
         }
-}
- ).execute()
+    ).execute()
+
 
 if __name__ == '__main__':
- youtube = get_authenticated_service()
-     add_video_to_playlist(youtube,"yszl2oxi8IY","PL2JW1S4IMwYubm06iDKfDsmWVB-J8funQ")
+    youtube = get_authenticated_service()
+    add_video_to_playlist(youtube, "yszl2oxi8IY", "PL2JW1S4IMwYubm06iDKfDsmWVB-J8funQ")

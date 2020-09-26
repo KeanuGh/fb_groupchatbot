@@ -64,14 +64,12 @@ def haiku_detection(text: str, haiku_form: tuple = (5, 7, 5)):
     words = [word.lower() for word in word_tokenize(text)]
 
     # make word:syllables dictionary
-    syllables = {}
-    for word in words:
-        syllables[word] = n_syllables(word)
+    syllables = {word: n_syllables(word) for word in words}
 
     tot_syllables = sum(syllables.values())
 
     # if not haiku-able
-    if tot_syllables != 17:
+    if tot_syllables != sum(list(haiku_form)):
         # print(f"There are {tot_syllables} syllables : {syllables}")
         return None
 
@@ -95,9 +93,9 @@ def haiku_detection(text: str, haiku_form: tuple = (5, 7, 5)):
     for i, line in enumerate(haiku_form):
         sum_line = sum(syllables[word] for word in lines[i])
         if sum_line > line:
-            raise SyntaxError("Too many syllables in line {}. Got {}, want {}".format(i, sum_line, line))
+            raise SyntaxError(f"Too many syllables in line {i}. Got {sum_line}, want {line}")
         elif sum_line < line:
-            raise SyntaxError("Not enough syllables in line {}. Got {}, want {}".format(i, sum_line, line))
+            raise SyntaxError(f"Not enough syllables in line {i}. Got {sum_line}, want {line}")
 
     return "\n".join(" ".join(line) for line in lines)
 
