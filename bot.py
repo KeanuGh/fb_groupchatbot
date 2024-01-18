@@ -113,7 +113,8 @@ class BarelyKnowHerBot(Client):
             else:
                 # special surprise
                 if random.random() < .001:
-                    self.send(Message(text='𓀐𓂸'), thread_id=thread_id, thread_type=thread_type)
+                    self.send(Message(text='🎉🎉 You are our 10,000 customer! 🎉🎉'), thread_id=thread_id, thread_type=thread_type)
+
                 # Sends the data to the inherited onMessage, so that we can still see when a message is received
                 super(BarelyKnowHerBot, self).onMessage(
                     author_id=author_id,
